@@ -1,2 +1,5 @@
 flask==2.0.1
 num2words==0.5.10
+dataclasses==0.6
+reportlab==3.6.7
+sqlite3==3.36.0
