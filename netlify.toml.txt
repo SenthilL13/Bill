@@ -1,0 +1,10 @@
+[build]
+  base = "."
+  publish = "public"  # Replace 'public' with your actual static folder if you have one
+  functions = "netlify/functions"
+
+[dev]
+  framework = "#custom"
+  command = "python -m flask run"  # Update this to match your Flask run command
+  port = 5000  # Flask default port
+  targetPort = 5000
