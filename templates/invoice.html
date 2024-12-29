@@ -62,7 +62,7 @@
                             <th>Qty</th>
                             <th>Rate Rs Ps</th>
                             <th>Amount Rs Ps</th>
-                            <th>Action</th>
+                            
                         </tr>
                     </thead>
                     <tbody id="items-tbody">
@@ -73,6 +73,7 @@
                             <td><input type="number" step="0.01" class="form-control quantity" name="quantity[]" value="{{ item.quantity }}" required></td>
                             <td><input type="number" step="0.01" class="form-control rate" name="rate[]" value="{{ item.rate }}" required></td>
                             <td class="text-right amount">{{ "%.2f"|format(item.amount) if item.amount else "0.00" }}</td>
+                            
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -81,20 +82,7 @@
             </div>
 
             <div class="row">
-                <div class="col-md-6">
-                    <div class="bank-details">
-                        <h5>Bank Details:</h5>
-                        <p>Name: Indian Bank</p>
-                        <p>A/c No.: 7728950252</p>
-                        <p>IFSC Code: IDIB000B176</p>
-                        <p>Branch: Bommaikuttimedu</p>
-                    </div>
-                    {% if grand_total_words %}
-                    <div class="amount-words">
-                        <p><strong>Amount in Rupees:</strong> {{ grand_total_words }}</p>
-                    </div>
-                    {% endif %}
-                </div>
+                
                 <div class="col-md-6">
                     <div class="amount-section">
                         <div class="row">
@@ -111,11 +99,30 @@
                         </div>
                         <div class="row font-weight-bold">
                             <div class="col-6">Grand Total:</div>
-                            <div class="col-6 text-right">{{ "%.2f"|format(grand_total) if grand_total else "0.00" }}</div>
+                            <div class="col-6 text-right">
+                                {{ "%.2f"|format(grand_total) if grand_total else "0.00" }}
+                            </div>
+							<!--
+                            <div class="col-6">Amount in Rupees:</div>
+                             <div class="col-6 text-right">
+                                {{ grand_total_words if grand_total_words else "Zero" }}
+                            </div>  -->
                         </div>
+
+      
                     </div>
                 </div>
             </div>
+
+            <div class="col-md-6">
+                    <div class="bank-details">
+                        <h5>Bank Details:</h5>
+                        <p>Name: Indian Bank</p>
+                        <p>A/c No.: 7728950252</p>
+                        <p>IFSC Code: IDIB000B176</p>
+                        <p>Branch: Bommaikuttimedu</p>
+                    </div>
+                </div>
 
             <div class="row mt-5">
                 <div class="col-md-12 text-right">
@@ -135,8 +142,59 @@
     </div>
 
     <script>
-    function addItem() {
+// Function to calculate totals
+function calculateTotals() {
+    const rows = document.querySelectorAll('#items-tbody .item-row');
+    let totalAmount = 0;
+
+    // Calculate the total amount for all rows
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+        const rate = parseFloat(row.querySelector('.rate').value) || 0;
+        const amount = quantity * rate;
+        row.querySelector('.amount').textContent = amount.toFixed(2); // Update the row amount
+        totalAmount += amount;
+    });
+
+    // Calculate CGST, SGST, and Grand Total
+    const cgst = totalAmount * 0.025; // 2.5% CGST
+    const sgst = totalAmount * 0.025; // 2.5% SGST
+    const grandTotal = totalAmount + cgst + sgst;
+
+    // Update the amount section with calculated values
+    document.querySelector('.amount-section .row:nth-child(1) .col-6:nth-child(2)').textContent = totalAmount.toFixed(2);
+    document.querySelector('.amount-section .row:nth-child(2) .col-6:nth-child(2)').textContent = cgst.toFixed(2);
+    document.querySelector('.amount-section .row:nth-child(3) .col-6:nth-child(2)').textContent = sgst.toFixed(2);
+    document.querySelector('.amount-section .row:nth-child(4) .col-6:nth-child(2)').textContent = grandTotal.toFixed(2);
+
+    // Update Grand Total in the header
+    document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+}
+
+// Update amount and totals when quantity or rate changes
+document.addEventListener('input', function (e) {
+    if (e.target.matches('.quantity, .rate')) {
+        calculateTotals();
+    }
+});
+
+// Initialize with one empty row
+window.onload = function () {
     const tbody = document.getElementById('items-tbody');
+    if (tbody.children.length === 0) {
+        addItem();
+    }
+    calculateTotals(); // Ensure totals are initialized to zero
+};
+
+// Function to add a new item
+function addItem() {
+    const tbody = document.getElementById('items-tbody');
+    if (!tbody) {
+        console.error('Table body element not found!');
+        return;
+    }
+
     const newRow = document.createElement('tr');
     newRow.className = 'item-row';
     newRow.innerHTML = `
@@ -148,41 +206,31 @@
         <td><button type="button" class="btn btn-danger btn-sm no-print" onclick="removeItem(this)">Delete</button></td>
     `;
     tbody.appendChild(newRow);
-        }
 
-        // Remove a specific row
-        function removeItem(button) {
-            const row = button.closest('tr');
-            row.remove();
-            updateRowNumbers();
-        }
+    // Recalculate totals after adding a new item
+    calculateTotals();
+}
 
-        // Update row numbers after adding/removing items
-        function updateRowNumbers() {
-            const rows = document.querySelectorAll('#items-tbody .item-row');
-            rows.forEach((row, index) => {
-                row.firstElementChild.textContent = index + 1;
-            });
-        }
+// Function to remove an item
+function removeItem(button) {
+    // Find the row containing the button and remove it
+    const row = button.closest('tr');
+    if (row) {
+        row.remove();
+    } else {
+        console.error('Row not found for deletion!');
+    }
 
-
-        window.onload = function () {
-        document.querySelector('form').reset();
-        document.getElementById('items-tbody').innerHTML = ''; // Clear all items
-        addItem(); // Add one empty row by default
-        };
-
-
-    // Update amount when quantity or rate changes
-    document.addEventListener('input', function(e) {
-        if (e.target.matches('.quantity, .rate')) {
-            const row = e.target.closest('.item-row');
-            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
-            const rate = parseFloat(row.querySelector('.rate').value) || 0;
-            const amount = (quantity * rate).toFixed(2);
-            row.querySelector('.amount').textContent = amount;
-        }
+    // Re-index rows to update the serial numbers
+    const rows = document.querySelectorAll('#items-tbody .item-row');
+    rows.forEach((row, index) => {
+        row.cells[0].textContent = index + 1;
     });
+
+    // Recalculate totals after removing an item
+    calculateTotals();
+}
+
     </script>
 </body>
 </html>

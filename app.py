@@ -35,29 +35,17 @@ def init_db():
     conn = get_db_connection()
     c = conn.cursor()
 
-    # Check if 'status' column exists in 'invoices' table
-    c.execute("PRAGMA table_info(invoices)")
-    columns = [column[1] for column in c.fetchall()]
-    if 'status' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN status TEXT DEFAULT "pending"')
+    # # Check if 'status' column exists in 'invoices' table
+    # c.execute("PRAGMA table_info(invoices)")
+    # columns = [column[1] for column in c.fetchall()]
+    # if 'status' not in columns:
+    #     c.execute('ALTER TABLE invoices ADD COLUMN status TEXT DEFAULT "pending"')
 
-    # Check if 'notes' column exists in 'invoices' table
-    if 'notes' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN notes TEXT')
-
-    # Check if 'customer_address' column exists in 'invoices' table
-    if 'customer_address' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN customer_address TEXT')
-
-    # Check if 'items' column exists in 'invoices' table
-    if 'items' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN items TEXT')
-
-    # Check if 'cgst' column exists in 'invoice_items' table
-    c.execute("PRAGMA table_info(invoice_items)")
-    item_columns = [column[1] for column in c.fetchall()]
-    if 'cgst' not in item_columns:
-        c.execute('ALTER TABLE invoice_items ADD COLUMN cgst REAL')
+    # # Check if 'cgst' column exists in 'invoice_items' table
+    # c.execute("PRAGMA table_info(invoice_items)")
+    # item_columns = [column[1] for column in c.fetchall()]
+    # if 'cgst' not in item_columns:
+    #     c.execute('ALTER TABLE invoice_items ADD COLUMN cgst REAL')
 
     # Create 'invoices' table if not exists
     c.execute('''CREATE TABLE IF NOT EXISTS invoices (
@@ -85,45 +73,6 @@ def init_db():
         FOREIGN KEY (invoice_id) REFERENCES invoices (id)
     )''')
 
-     # Check and add missing columns to invoices table
-    c.execute("PRAGMA table_info(invoices)")
-    columns = [column[1] for column in c.fetchall()]
-    
-    if 'status' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN status TEXT DEFAULT "pending"')
-    if 'notes' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN notes TEXT')
-    if 'customer_address' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN customer_address TEXT')
-    if 'items' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN items TEXT')
-    if 'cgst' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN cgst REAL DEFAULT 0')
-    if 'sgst' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN sgst REAL DEFAULT 0')
-    if 'total_amount' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN total_amount REAL')
-    if 'grand_total' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN grand_total REAL')
-    if 'grand_total_words' not in columns:
-        c.execute('ALTER TABLE invoices ADD COLUMN grand_total_words TEXT')
-
-    # Check and add missing columns to invoice_items table
-    c.execute("PRAGMA table_info(invoice_items)")
-    item_columns = [column[1] for column in c.fetchall()]
-    
-    if 'hsn_code' not in item_columns:
-        c.execute('ALTER TABLE invoice_items ADD COLUMN hsn_code TEXT')
-    if 'cgst' not in item_columns:
-        c.execute('ALTER TABLE invoice_items ADD COLUMN cgst REAL')
-    if 'sgst' not in item_columns:
-        c.execute('ALTER TABLE invoice_items ADD COLUMN sgst REAL')
-
-    # Check if 'hsn_code' column exists in 'invoice_items' table
-    c.execute("PRAGMA table_info(invoice_items)")
-    item_columns = [column[1] for column in c.fetchall()]
-    if 'hsn_code' not in item_columns:
-        c.execute('ALTER TABLE invoice_items ADD COLUMN hsn_code TEXT')
 
     conn.commit()
     conn.close()
@@ -407,6 +356,7 @@ def calculate_totals(items: List[InvoiceItem]) -> dict:
         'sgst': sgst,
         'grand_total': grand_total
     }
+
 def format_amount_words(amount: float) -> str:
     amount = round(amount, 2)
     whole = int(amount)
@@ -415,6 +365,17 @@ def format_amount_words(amount: float) -> str:
     if decimal > 0:
         return f"{num2words(whole, lang='en').title()} Rupees and {num2words(decimal, lang='en').title()} Paise Only"
     return f"{num2words(whole, lang='en').title()} Rupees Only"
+
+@app.route('/')
+def invoice():
+    # Example grand total value
+    grand_total = 1200.50  # This should be dynamically calculated
+
+    # Convert grand total to words
+    grand_total_words = format_amount_words(grand_total)
+
+    # Pass data to the template
+    return render_template('invoice_template.html', grand_total=grand_total, grand_total_words=grand_total_words)
 
 if __name__ == '__main__':
     init_db()
